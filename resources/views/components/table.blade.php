@@ -1,14 +1,6 @@
 @props(['donations'])
 
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Donation Records</h1>
-        <button
-            class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300">
-            Add New Donation
-        </button>
-    </div>
-
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -66,8 +58,16 @@
                                 {{ $donation['storage_location'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                                <button class="text-red-600 hover:text-red-900">Delete</button>
+                                <a href="/donations/{{ $donation['id'] }}/edit"
+                                    class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                <form action="/donations/{{ $donation['id'] }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900"
+                                        onclick="return confirm('Are you sure you want to delete this donation?')">
+                                        Delete
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @endforeach
@@ -84,8 +84,16 @@
                 <div class="flex justify-between items-start mb-2">
                     <h3 class="font-medium text-gray-900">{{ $donation['donator_name'] }}</h3>
                     <div class="flex space-x-2">
-                        <button class="text-indigo-600 hover:text-indigo-900">Edit</button>
-                        <button class="text-red-600 hover:text-red-900">Delete</button>
+                        <a href="/donations/{{ $donation['id'] }}/edit"
+                            class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                        <form action="/donations/{{ $donation['id'] }}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 hover:text-red-900"
+                                onclick="return confirm('Are you sure you want to delete this donation?')">
+                                Delete
+                            </button>
+                        </form>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-sm">
