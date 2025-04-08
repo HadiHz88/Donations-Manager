@@ -16,8 +16,18 @@ class ObjectiveFactory extends Factory
      */
     public function definition(): array
     {
+        $objectives = [
+            'Education Fund',
+            'Food Bank Support',
+            'Housing Assistance',
+            'Medical Care',
+            'Clothing Drive',
+            'Transportation Aid',
+            'Utilities Support'
+        ];
+        
         return [
-            //
+            'title' => $this->faker->unique()->randomElement($objectives)
         ];
     }
 }
