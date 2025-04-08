@@ -16,56 +16,6 @@
 </head>
 
 <body class="bg-gray-100">
-    @php
-        $donations = [
-            [
-                'id' => 1,
-                'donator_name' => 'John Smith',
-                'donation_type' => 'Money',
-                'objective' => 'Education',
-                'total_amount' => 5000,
-                'amount_spent' => 3500,
-                'storage_location' => 'Bank',
-            ],
-            [
-                'id' => 2,
-                'donator_name' => 'Sarah Johnson',
-                'donation_type' => 'Clothes',
-                'objective' => 'Housing',
-                'total_amount' => 200,
-                'amount_spent' => 0,
-                'storage_location' => 'Warehouse',
-            ],
-            [
-                'id' => 3,
-                'donator_name' => 'Michael Brown',
-                'donation_type' => 'Food',
-                'objective' => 'Food',
-                'total_amount' => 1000,
-                'amount_spent' => 750,
-                'storage_location' => 'Food Bank',
-            ],
-            [
-                'id' => 4,
-                'donator_name' => 'Emily Davis',
-                'donation_type' => 'Money',
-                'objective' => 'Housing',
-                'total_amount' => 3000,
-                'amount_spent' => 1200,
-                'storage_location' => 'Bank',
-            ],
-            [
-                'id' => 5,
-                'donator_name' => 'Robert Wilson',
-                'donation_type' => 'Clothes',
-                'objective' => 'Education',
-                'total_amount' => 150,
-                'amount_spent' => 0,
-                'storage_location' => 'Warehouse',
-            ],
-        ];
-    @endphp
-
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-gray-800">Donation Records</h1>

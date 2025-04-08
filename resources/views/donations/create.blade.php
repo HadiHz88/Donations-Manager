@@ -17,7 +17,7 @@
 
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
-        <x-donation-form mode="create" />
+        <x-donation-form mode="create" :objectives="$objectives" :donation="null" />
     </div>
 </body>
 

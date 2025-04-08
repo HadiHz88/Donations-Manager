@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Donation;
+use App\Models\Objective;
 use Illuminate\Http\Request;
 
 class DonationController extends Controller
@@ -9,70 +11,42 @@ class DonationController extends Controller
     /**
      * Display a listing of the donations.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Foundation\Application|\Illuminate\View\View|object
      */
     public function index()
     {
-        // Mock data for now, will be replaced with database query later
-        $donations = [
-            [
-                'id' => 1,
-                'donator_name' => 'John Smith',
-                'donation_type' => 'Money',
-                'objective' => 'Education',
-                'total_amount' => 5000,
-                'amount_spent' => 3500,
-                'storage_location' => 'Bank',
-            ],
-            [
-                'id' => 2,
-                'donator_name' => 'Sarah Johnson',
-                'donation_type' => 'Clothes',
-                'objective' => 'Housing',
-                'total_amount' => 200,
-                'amount_spent' => 0,
-                'storage_location' => 'Warehouse',
-            ],
-            [
-                'id' => 3,
-                'donator_name' => 'Michael Brown',
-                'donation_type' => 'Food',
-                'objective' => 'Food',
-                'total_amount' => 1000,
-                'amount_spent' => 750,
-                'storage_location' => 'Food Bank',
-            ],
-            [
-                'id' => 4,
-                'donator_name' => 'Emily Davis',
-                'donation_type' => 'Money',
-                'objective' => 'Housing',
-                'total_amount' => 3000,
-                'amount_spent' => 1200,
-                'storage_location' => 'Bank',
-            ],
-            [
-                'id' => 5,
-                'donator_name' => 'Robert Wilson',
-                'donation_type' => 'Clothes',
-                'objective' => 'Education',
-                'total_amount' => 150,
-                'amount_spent' => 0,
-                'storage_location' => 'Warehouse',
-            ],
-        ];
+        $donations = Donation::with('objective')->get()->map(function ($donation) {
+            return [
+                'id' => $donation->id,
+                'donator_name' => $donation->donator_name,
+                'donation_type' => $this->getDonationType($donation->store),
+                'objective' => $donation->objective->title,
+                'total_amount' => $donation->amount,
+                'amount_spent' => $donation->spent,
+                'storage_location' => $this->getStorageLocation($donation->store),
+            ];
+        });
 
-        return view('home', ['donations' => $donations]);
+        $objectives = Objective::all();
+        return view('home', [
+            'donations' => $donations,
+            'objectives' => $objectives
+        ]);
     }
 
     /**
      * Show the form for creating a new donation.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Foundation\Application|\Illuminate\View\View|object
      */
     public function create()
     {
-        return view('donations.create');
+        $objectives = Objective::all();
+        return view('donations.create', [
+            'objectives' => $objectives,
+            'donation' => null,
+            'mode' => 'create'
+        ]);
     }
 
     /**
@@ -83,19 +57,23 @@ class DonationController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate the request
         $validated = $request->validate([
             'donator_name' => 'required|string|max:255',
-            'donation_type' => 'required|string|max:255',
-            'objective' => 'required|string|max:255',
+            'objective' => 'required|exists:objectives,id',
             'total_amount' => 'required|numeric|min:0',
             'amount_spent' => 'required|numeric|min:0',
-            'storage_location' => 'required|string|max:255',
+            'storage_location' => 'required|string|in:Bank,Safe,Warehouse,Food Bank,Storage Unit,Other',
         ]);
 
-        // In a real application, you would save this to the database
-        // For now, we'll just redirect back to the index page
-        return redirect('/')->with('success', 'Donation created successfully');
+        Donation::create([
+            'donator_name' => $validated['donator_name'],
+            'objective_id' => $validated['objective'],
+            'amount' => $validated['total_amount'],
+            'spent' => $validated['amount_spent'],
+            'store' => $this->getStoreType($validated['storage_location']),
+        ]);
+
+        return redirect('/')->with('success', 'Donation created successfully.');
     }
 
     /**
@@ -106,61 +84,23 @@ class DonationController extends Controller
      */
     public function edit($id)
     {
-        // Mock data for now, will be replaced with database query later
-        $donations = [
-            1 => [
-                'id' => 1,
-                'donator_name' => 'John Smith',
-                'donation_type' => 'Money',
-                'objective' => 'Education',
-                'total_amount' => 5000,
-                'amount_spent' => 3500,
-                'storage_location' => 'Bank',
-            ],
-            2 => [
-                'id' => 2,
-                'donator_name' => 'Sarah Johnson',
-                'donation_type' => 'Clothes',
-                'objective' => 'Housing',
-                'total_amount' => 200,
-                'amount_spent' => 0,
-                'storage_location' => 'Warehouse',
-            ],
-            3 => [
-                'id' => 3,
-                'donator_name' => 'Michael Brown',
-                'donation_type' => 'Food',
-                'objective' => 'Food',
-                'total_amount' => 1000,
-                'amount_spent' => 750,
-                'storage_location' => 'Food Bank',
-            ],
-            4 => [
-                'id' => 4,
-                'donator_name' => 'Emily Davis',
-                'donation_type' => 'Money',
-                'objective' => 'Housing',
-                'total_amount' => 3000,
-                'amount_spent' => 1200,
-                'storage_location' => 'Bank',
-            ],
-            5 => [
-                'id' => 5,
-                'donator_name' => 'Robert Wilson',
-                'donation_type' => 'Clothes',
-                'objective' => 'Education',
-                'total_amount' => 150,
-                'amount_spent' => 0,
-                'storage_location' => 'Warehouse',
-            ],
+        $donation = Donation::with('objective')->findOrFail($id);
+        $objectives = Objective::all();
+        
+        $formattedDonation = [
+            'id' => $donation->id,
+            'donator_name' => $donation->donator_name,
+            'objective' => $donation->objective_id,
+            'total_amount' => $donation->amount,
+            'amount_spent' => $donation->spent,
+            'storage_location' => $this->getStorageLocation($donation->store),
         ];
 
-        // Check if the donation exists
-        if (!isset($donations[$id])) {
-            return redirect('/')->with('error', 'Donation not found');
-        }
-
-        return view('donations.edit', ['donation' => $donations[$id]]);
+        return view('donations.edit', [
+            'donation' => $formattedDonation,
+            'objectives' => $objectives,
+            'mode' => 'edit'
+        ]);
     }
 
     /**
@@ -172,19 +112,24 @@ class DonationController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validate the request
         $validated = $request->validate([
             'donator_name' => 'required|string|max:255',
-            'donation_type' => 'required|string|max:255',
-            'objective' => 'required|string|max:255',
+            'objective' => 'required|exists:objectives,id',
             'total_amount' => 'required|numeric|min:0',
             'amount_spent' => 'required|numeric|min:0',
-            'storage_location' => 'required|string|max:255',
+            'storage_location' => 'required|string|in:Bank,Safe,Warehouse,Food Bank,Storage Unit,Other',
         ]);
 
-        // In a real application, you would update this in the database
-        // For now, we'll just redirect back to the index page
-        return redirect('/')->with('success', 'Donation updated successfully');
+        $donation = Donation::findOrFail($id);
+        $donation->update([
+            'donator_name' => $validated['donator_name'],
+            'objective_id' => $validated['objective'],
+            'amount' => $validated['total_amount'],
+            'spent' => $validated['amount_spent'],
+            'store' => $this->getStoreType($validated['storage_location']),
+        ]);
+
+        return redirect('/')->with('success', 'Donation updated successfully.');
     }
 
     /**
@@ -195,8 +140,63 @@ class DonationController extends Controller
      */
     public function destroy($id)
     {
-        // In a real application, you would delete this from the database
-        // For now, we'll just redirect back to the index page
-        return redirect('/')->with('success', 'Donation deleted successfully');
+        $donation = Donation::findOrFail($id);
+        $donation->delete();
+
+        return redirect('/')->with('success', 'Donation deleted successfully.');
     }
-} 
+
+    /**
+     * Convert storage location to store type
+     *
+     * @param string $location
+     * @return string
+     */
+    private function getStoreType($storageLocation)
+    {
+        return match ($storageLocation) {
+            'Bank' => 'bank',
+            'Safe' => 'safe',
+            'Warehouse' => 'warehouse',
+            'Food Bank' => 'food_bank',
+            'Storage Unit' => 'storage_unit',
+            'Other' => 'other',
+            default => 'other',
+        };
+    }
+
+    /**
+     * Convert store type to storage location
+     *
+     * @param string $store
+     * @return string
+     */
+    private function getStorageLocation($storeType)
+    {
+        return match ($storeType) {
+            'bank' => 'Bank',
+            'safe' => 'Safe',
+            'warehouse' => 'Warehouse',
+            'food_bank' => 'Food Bank',
+            'storage_unit' => 'Storage Unit',
+            'other' => 'Other',
+            default => 'Other',
+        };
+    }
+
+    /**
+     * Get donation type based on store type
+     *
+     * @param string $store
+     * @return string
+     */
+    private function getDonationType($storeType)
+    {
+        return match ($storeType) {
+            'bank', 'safe' => 'Money',
+            'warehouse', 'storage_unit' => 'Items',
+            'food_bank' => 'Food',
+            default => 'Other',
+        };
+    }
+}

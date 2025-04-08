@@ -22,3 +22,8 @@ Route::post('/donations', [DonationController::class, 'store']);
 Route::get('/donations/{id}/edit', [DonationController::class, 'edit']);
 Route::put('/donations/{id}', [DonationController::class, 'update']);
 Route::delete('/donations/{id}', [DonationController::class, 'destroy']);
+
+// UI Test page
+Route::get('/test', function() {
+  return view('test');
+});
