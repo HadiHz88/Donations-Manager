@@ -21,11 +21,5 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-
-        // Create 4 objectives
-        Objective::factory(4)->create();
-
-        // Create 10 donations
-        Donation::factory( 4)->create();
     }
 }

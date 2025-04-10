@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\OutcomeController;
+use App\Http\Controllers\StatisticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,16 +16,16 @@ use App\Http\Controllers\DonationController;
 |
 */
 
-Route::get('/', [DonationController::class, 'index']);
-
-// Donation CRUD routes
-Route::get('/donations/create', [DonationController::class, 'create']);
-Route::post('/donations', [DonationController::class, 'store']);
-Route::get('/donations/{id}/edit', [DonationController::class, 'edit']);
-Route::put('/donations/{id}', [DonationController::class, 'update']);
-Route::delete('/donations/{id}', [DonationController::class, 'destroy']);
-
-// UI Test page
-Route::get('/test', function() {
-  return view('test');
+// Redirect the root URL to the donations index
+Route::get('/', function () {
+    return redirect()->route('donations.index');
 });
+
+// Donation routes
+Route::resource('donations', DonationController::class);
+
+// Outcome routes
+Route::resource('outcomes', OutcomeController::class);
+
+// Statistics route
+Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics');
