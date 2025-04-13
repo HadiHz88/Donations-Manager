@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Currency;
+use App\Models\Objective;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +17,8 @@ return new class extends Migration {
             $table->string('reference_id')->unique();
             $table->string('donor_name');
             $table->decimal('amount', 10, 2);
-            $table->string('objective');
+            $table->foreignIdFor(Currency::class);
+            $table->foreignIdFor(Objective::class);
             $table->string('storage_location');
             $table->date('date_received');
             $table->text('notes')->nullable();

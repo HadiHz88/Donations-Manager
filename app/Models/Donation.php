@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Donation extends Model
 {
@@ -49,5 +50,10 @@ class Donation extends Model
     public function getIsCompleteAttribute(): bool
     {
         return $this->remaining_amount <= 0;
+    }
+
+    public function currency(): HasOne
+    {
+        return $this->hasOne(Currency::class);
     }
 }
