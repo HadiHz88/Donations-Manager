@@ -9,4 +9,11 @@ class Currency extends Model
 {
     /** @use HasFactory<\Database\Factories\CurrencyFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'code',
+        'name',
+        'symbol',
+        'exchange_rate',
+    ];
 }

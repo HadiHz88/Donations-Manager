@@ -2,10 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Donation;
-use App\Models\Objective;
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -15,11 +11,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $currencies = [
+            ['code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$', 'exchange_rate' => 1.0000],
+            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'exchange_rate' => 0.8800],
+            ['code' => 'VND', 'name' => 'Lebanese Pounds', 'symbol' => 'LBP', 'exchange_rate' => 89000.0000],
+        ];
     }
 }
