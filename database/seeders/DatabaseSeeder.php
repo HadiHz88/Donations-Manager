@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Donation;
+use App\Models\Currency;
 use App\Models\Objective;
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -15,11 +13,30 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $currencies = [
+            ['code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$', 'exchange_rate' => 1.0000],
+            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'exchange_rate' => 0.8800],
+            ['code' => 'VND', 'name' => 'Lebanese Pounds', 'symbol' => 'LBP', 'exchange_rate' => 89000.0000],
+        ];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        foreach ($currencies as $currency) {
+            Currency::create($currency);
+        }
+
+        $objectives = [
+            ['name' => 'Food and Water', 'description' => 'Providing food and clean water to those in need.'],
+            ['name' => 'Medical Aid', 'description' => 'Offering medical assistance and healthcare services.'],
+            ['name' => 'Education', 'description' => 'Supporting educational initiatives and resources.'],
+            ['name' => 'Shelter', 'description' => 'Providing safe and secure housing for the homeless.'],
+            ['name' => 'Clothing', 'description' => 'Distributing clothing to those in need.'],
+        ];
+
+        foreach ($objectives as $objective) {
+            Objective::create($objective);
+        }
+
+        $this->call([
+            TestSeeder::class,
         ]);
     }
 }

@@ -14,6 +14,7 @@ class Outcome extends Model
     protected $fillable = [
         'reference_id',
         'amount',
+        'currency_id',
         'target_organization',
         'source_donation_id',
         'source_donation_ref',
@@ -28,6 +29,14 @@ class Outcome extends Model
         'amount' => 'decimal:2',
         'receipt_received' => 'boolean',
     ];
+
+    /**
+     * Get the currency that this outcome is related to.
+     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
+    }
 
     /**
      * Get the donation that this outcome is drawn from.
