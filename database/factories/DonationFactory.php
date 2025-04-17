@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Donation;
+use App\Models\Currency;
 use App\Models\Objective;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -10,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class DonationFactory extends Factory
 {
+    protected $model = Donation::class;
+
     /**
      * Define the model's default state.
      *
@@ -17,15 +21,45 @@ class DonationFactory extends Factory
      */
     public function definition(): array
     {
-        $storeTypes = ['cash', 'bank', 'products', 'other'];
-        $amount = $this->faker->randomFloat(2, 100, 10000);
+        $currencies = Currency::all();
+        $objectives = Objective::all();
+        $storageLocations = ['Bank', 'Safe', 'Warehouse', 'Food Bank', 'Storage Unit'];
         
         return [
-            'donator_name' => $this->faker->name(),
-            'objective_id' => Objective::inRandomOrder()->first()->id ?? Objective::factory(),
-            'amount' => $amount,
-            'spent' => $this->faker->randomFloat(2, 0, $amount),
-            'store' => $this->faker->randomElement($storeTypes),
+            'reference_id' => 'DON-' . strtoupper(fake()->unique()->regexify('[A-Z0-9]{8}')),
+            'donor_name' => fake()->name(),
+            'amount' => fake()->randomFloat(2, 1000, 10000),
+            'currency_id' => $currencies->random()->id,
+            'objective_id' => $objectives->random()->id,
+            'storage_location' => fake()->randomElement($storageLocations),
+            'date_received' => fake()->dateTimeBetween('-6 months', 'now'),
         ];
+    }
+
+    public function usd()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'currency_id' => Currency::where('code', 'USD')->first()->id,
+            ];
+        });
+    }
+
+    public function eur()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'currency_id' => Currency::where('code', 'EUR')->first()->id,
+            ];
+        });
+    }
+
+    public function vnd()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'currency_id' => Currency::where('code', 'VND')->first()->id,
+            ];
+        });
     }
 }

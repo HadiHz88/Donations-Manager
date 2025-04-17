@@ -70,7 +70,7 @@ class StatisticsController extends Controller
                 ];
             });
 
-        $recentOutcomes = Outcome::with('donation.currency')
+        $recentOutcomes = Outcome::with(['donation.currency'])
             ->latest('date_sent')
             ->take(5)
             ->get()

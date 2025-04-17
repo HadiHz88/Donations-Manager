@@ -65,6 +65,7 @@ class OutcomeController extends Controller
                 'currency_id' => $validated['currency'],
                 'target_organization' => $validated['target_organization'],
                 'source_donation_id' => $validated['source_donation_id'],
+                'source_donation_ref' => Donation::find($validated['source_donation_id'])->reference_id,
                 'date_sent' => $validated['date_sent'],
                 'payment_method' => $validated['payment_method'],
                 'notes' => $validated['notes'],

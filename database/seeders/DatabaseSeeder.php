@@ -34,5 +34,9 @@ class DatabaseSeeder extends Seeder
         foreach ($objectives as $objective) {
             Objective::create($objective);
         }
+
+        $this->call([
+            TestSeeder::class,
+        ]);
     }
 }

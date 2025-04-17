@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string('target_organization');
             $table->foreignIdFor(Donation::class, 'source_donation_id');
             $table->foreignIdFor(Currency::class, 'currency_id');
-            $table->string('source_donation_ref');
+            $table->string('source_donation_ref')->nullable();
             $table->date('date_sent');
             $table->string('payment_method')->nullable();
             $table->text('notes')->nullable();
