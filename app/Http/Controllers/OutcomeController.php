@@ -4,129 +4,137 @@ namespace App\Http\Controllers;
 
 use App\Models\Outcome;
 use App\Models\Donation;
+use App\Models\Currency;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class OutcomeController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $outcomes = Outcome::query();
+        $outcomes = Outcome::with(['donation', 'currency'])
+            ->latest()
+            ->paginate(10);
 
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $outcomes->where(function($query) use ($search) {
-                $query->where('target_organization', 'like', "%{$search}%")
-                    ->orWhere('reference_id', 'like', "%{$search}%")
-                    ->orWhere('source_donation_ref', 'like', "%{$search}%");
-            });
-        }
-
-        $outcomes = $outcomes->latest('date_sent')->paginate(10);
-
-        return view('pages.outcome', compact('outcomes'));
+        return view('pages.outcome', [
+            'outcomes' => $outcomes
+        ]);
     }
 
     public function create()
     {
-        // Get donations that have available funds
-        $donations = Donation::whereRaw('amount > (SELECT COALESCE(SUM(outcomes.amount), 0) FROM outcomes WHERE outcomes.source_donation_id = donations.id)')
-            ->orderBy('date_received', 'desc')
+        $donations = Donation::with(['currency', 'objective'])
+            ->whereDoesntHave('outcome')
+            ->latest()
             ->get();
 
-        return view('pages.outcome-form', compact('donations'));
+        $currencies = Currency::orderBy('code')->get();
+
+        return view('pages.outcome-form', [
+            'outcome' => null,
+            'donations' => $donations,
+            'currencies' => $currencies
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
+            'currency' => 'required|exists:currencies,id',
             'target_organization' => 'required|string|max:255',
             'source_donation_id' => 'required|exists:donations,id',
             'date_sent' => 'required|date',
-            'payment_method' => 'nullable|string|max:255',
+            'payment_method' => 'nullable|string|in:Bank Transfer,Cash,Check,Other',
             'notes' => 'nullable|string',
             'receipt_received' => 'nullable|boolean',
         ]);
 
-        // Check if the donation has enough funds
-        $donation = Donation::findOrFail($validated['source_donation_id']);
-        $usedAmount = $donation->outcomes()->sum('amount');
-        $availableAmount = $donation->amount - $usedAmount;
+        try {
+            // Generate a unique reference ID
+            $referenceId = 'OUT-' . strtoupper(Str::random(8));
+            
+            // Ensure the reference ID is unique
+            while (Outcome::where('reference_id', $referenceId)->exists()) {
+                $referenceId = 'OUT-' . strtoupper(Str::random(8));
+            }
 
-        if ($validated['amount'] > $availableAmount) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "The requested amount exceeds the available funds ($availableAmount) for this donation.");
+            Outcome::create([
+                'reference_id' => $referenceId,
+                'amount' => $validated['amount'],
+                'currency_id' => $validated['currency'],
+                'target_organization' => $validated['target_organization'],
+                'source_donation_id' => $validated['source_donation_id'],
+                'date_sent' => $validated['date_sent'],
+                'payment_method' => $validated['payment_method'],
+                'notes' => $validated['notes'],
+                'receipt_received' => $validated['receipt_received'] ?? false,
+            ]);
+
+            return redirect()->route('outcomes.index')->with('success', 'Outcome created successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Failed to create outcome: ' . $e->getMessage());
         }
-
-        // Generate a reference ID
-        $latestOutcome = Outcome::latest()->first();
-        $refNumber = $latestOutcome ? intval(substr($latestOutcome->reference_id, -3)) + 1 : 1;
-        $validated['reference_id'] = 'OUT-' . date('Y') . '-' . str_pad($refNumber, 3, '0', STR_PAD_LEFT);
-
-        // Store the donation reference for easier querying
-        $validated['source_donation_ref'] = $donation->reference_id;
-
-        Outcome::create($validated);
-
-        return redirect()->route('outcomes.index')
-            ->with('success', 'Outcome added successfully.');
     }
 
-    public function edit(Outcome $outcome)
+    public function edit($id)
     {
-        // Get donations that have available funds (including the current one)
-        $donations = Donation::whereRaw('amount > (SELECT COALESCE(SUM(outcomes.amount), 0) FROM outcomes WHERE outcomes.source_donation_id = donations.id AND outcomes.id != ?)', [$outcome->id])
+        $outcome = Outcome::with(['donation', 'currency'])->findOrFail($id);
+        $donations = Donation::with(['currency', 'objective'])
+            ->whereDoesntHave('outcome')
             ->orWhere('id', $outcome->source_donation_id)
-            ->orderBy('date_received', 'desc')
+            ->latest()
             ->get();
 
-        return view('pages.outcome-form', compact('outcome', 'donations'));
+        $currencies = Currency::orderBy('code')->get();
+
+        return view('pages.outcome-form', [
+            'outcome' => $outcome,
+            'donations' => $donations,
+            'currencies' => $currencies
+        ]);
     }
 
-    public function update(Request $request, Outcome $outcome)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
+            'currency' => 'required|exists:currencies,id',
             'target_organization' => 'required|string|max:255',
             'source_donation_id' => 'required|exists:donations,id',
             'date_sent' => 'required|date',
-            'payment_method' => 'nullable|string|max:255',
+            'payment_method' => 'nullable|string|in:Bank Transfer,Cash,Check,Other',
             'notes' => 'nullable|string',
             'receipt_received' => 'nullable|boolean',
         ]);
 
-        // Check if the donation has enough funds (if changing donation or amount)
-        if ($outcome->source_donation_id != $validated['source_donation_id'] || $outcome->amount != $validated['amount']) {
-            $donation = Donation::findOrFail($validated['source_donation_id']);
-            $usedAmount = $donation->outcomes()
-                ->where('id', '!=', $outcome->id)
-                ->sum('amount');
-            $availableAmount = $donation->amount - $usedAmount;
+        try {
+            $outcome = Outcome::findOrFail($id);
+            $outcome->update([
+                'amount' => $validated['amount'],
+                'currency_id' => $validated['currency'],
+                'target_organization' => $validated['target_organization'],
+                'source_donation_id' => $validated['source_donation_id'],
+                'date_sent' => $validated['date_sent'],
+                'payment_method' => $validated['payment_method'],
+                'notes' => $validated['notes'],
+                'receipt_received' => $validated['receipt_received'] ?? false,
+            ]);
 
-            if ($validated['amount'] > $availableAmount) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', "The requested amount exceeds the available funds ($availableAmount) for this donation.");
-            }
-
-            // Update the donation reference if changed
-            if ($outcome->source_donation_id != $validated['source_donation_id']) {
-                $validated['source_donation_ref'] = $donation->reference_id;
-            }
+            return redirect()->route('outcomes.index')->with('success', 'Outcome updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Failed to update outcome: ' . $e->getMessage());
         }
-
-        $outcome->update($validated);
-
-        return redirect()->route('outcomes.index')
-            ->with('success', 'Outcome updated successfully.');
     }
 
-    public function destroy(Outcome $outcome)
+    public function destroy($id)
     {
-        $outcome->delete();
-
-        return redirect()->route('outcomes.index')
-            ->with('success', 'Outcome deleted successfully.');
+        try {
+            $outcome = Outcome::findOrFail($id);
+            $outcome->delete();
+            return redirect()->route('outcomes.index')->with('success', 'Outcome deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to delete outcome: ' . $e->getMessage());
+        }
     }
 }

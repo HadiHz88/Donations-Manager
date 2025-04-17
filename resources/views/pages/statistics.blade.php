@@ -8,7 +8,6 @@
         :totalIncome="$totalIncome"
         :totalOutcome="$totalOutcome"
         :remainingFunds="$remainingFunds"
-        :completedObjectives="$completedObjectives"
         :distributionData="$distributionData"
         :monthlyTrends="$monthlyTrends"
         :recentActivities="$recentActivities"

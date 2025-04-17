@@ -3,93 +3,157 @@
 namespace App\Http\Controllers;
 
 use App\Models\Donation;
+use App\Models\Objective;
+use App\Models\Currency;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class DonationController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $donations = Donation::query();
+        $donations = Donation::with(['objective', 'currency'])
+            ->latest()
+            ->paginate(10);
 
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $donations->where(function ($query) use ($search) {
-                $query->where('donor_name', 'like', "%{$search}%")
-                    ->orWhere('reference_id', 'like', "%{$search}%")
-                    ->orWhere('objective', 'like', "%{$search}%");
-            });
-        }
+        $objectives = Objective::orderBy('name')->get();
+        $currencies = Currency::orderBy('code')->get();
 
-        $donations = $donations->latest('date_received')->paginate(10);
+        return view('pages.income', [
+            'donations' => $donations,
+            'objectives' => $objectives,
+            'currencies' => $currencies
+        ]);
+    }
 
-        return view('pages.income', compact('donations'));
+    public function create()
+    {
+        $objectives = Objective::orderBy('name')->get();
+        $currencies = Currency::orderBy('code')->get();
+
+        return view('pages.income-form', [
+            'objectives' => $objectives,
+            'currencies' => $currencies,
+            'donation' => null,
+            'mode' => 'create'
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'donor_name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'objective' => 'required|string|max:255',
-            'storage_location' => 'required|string|max:255',
-            'date_received' => 'required|date',
-            'notes' => 'nullable|string',
+            'objective' => 'required|exists:objectives,id',
+            'currency' => 'required|exists:currencies,id',
+            'total_amount' => 'required|numeric|min:0',
+            'storage_location' => 'required|string|in:Bank,Safe,Warehouse,Food Bank,Storage Unit,Other',
         ]);
 
-        // Generate a reference ID
-        $latestDonation = Donation::latest()->first();
-        $refNumber = $latestDonation ? intval(substr($latestDonation->reference_id, -3)) + 1 : 1;
-        $validated['reference_id'] = 'DON-' . date('Y') . '-' . str_pad($refNumber, 3, '0', STR_PAD_LEFT);
+        try {
+            // Generate a unique reference ID
+            $referenceId = 'DON-' . strtoupper(Str::random(8));
+            
+            // Ensure the reference ID is unique
+            while (Donation::where('reference_id', $referenceId)->exists()) {
+                $referenceId = 'DON-' . strtoupper(Str::random(8));
+            }
 
-        Donation::create($validated);
+            Donation::create([
+                'reference_id' => $referenceId,
+                'donor_name' => $validated['donor_name'],
+                'objective_id' => $validated['objective'],
+                'currency_id' => $validated['currency'],
+                'amount' => $validated['total_amount'],
+                'storage_location' => $validated['storage_location'],
+                'date_received' => now(),
+            ]);
 
-        return redirect()->route('donations.index')
-            ->with('success', 'Donation added successfully.');
+            return redirect()->route('donations.index')->with('success', 'Donation created successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Failed to create donation: ' . $e->getMessage());
+        }
     }
 
-    public function create()
+    public function edit($id)
     {
-        return view('pages.income-form');
+        $donation = Donation::with(['objective', 'currency'])->findOrFail($id);
+        $objectives = Objective::orderBy('name')->get();
+        $currencies = Currency::orderBy('code')->get();
+
+        $formattedDonation = [
+            'id' => $donation->id,
+            'donor_name' => $donation->donor_name,
+            'objective' => $donation->objective_id,
+            'currency' => $donation->currency_id,
+            'total_amount' => $donation->amount,
+            'storage_location' => $this->getStorageLocation($donation->store),
+        ];
+
+        return view('pages.income-form', [
+            'donation' => $formattedDonation,
+            'objectives' => $objectives,
+            'currencies' => $currencies,
+            'mode' => 'edit'
+        ]);
     }
 
-    public function show(Donation $donation)
-    {
-        return view('pages.donation-details', compact('donation'));
-    }
-
-    public function edit(Donation $donation)
-    {
-        return view('pages.income-form', compact('donation'));
-    }
-
-    public function update(Request $request, Donation $donation)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'donor_name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'objective' => 'required|string|max:255',
-            'storage_location' => 'required|string|max:255',
-            'date_received' => 'required|date',
-            'notes' => 'nullable|string',
+            'objective' => 'required|exists:objectives,id',
+            'currency' => 'required|exists:currencies,id',
+            'total_amount' => 'required|numeric|min:0',
+            'storage_location' => 'required|string|in:Bank,Safe,Warehouse,Food Bank,Storage Unit,Other',
         ]);
 
-        $donation->update($validated);
+        try {
+            $donation = Donation::findOrFail($id);
+            $donation->update([
+                'donor_name' => $validated['donor_name'],
+                'objective_id' => $validated['objective'],
+                'currency_id' => $validated['currency'],
+                'amount' => $validated['total_amount'],
+                'storage_location' => $validated['storage_location'],
+            ]);
 
-        return redirect()->route('donations.index')
-            ->with('success', 'Donation updated successfully.');
+            return redirect()->route('donations.index')->with('success', 'Donation updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Failed to update donation: ' . $e->getMessage());
+        }
     }
 
-    public function destroy(Donation $donation)
+    public function destroy($id)
     {
-        // Check if this donation has any outcomes linked to it
-        if ($donation->outcomes()->count() > 0) {
-            return redirect()->route('donations.index')
-                ->with('error', 'Cannot delete donation with linked outcomes.');
+        try {
+            $donation = Donation::findOrFail($id);
+            $donation->delete();
+            return redirect()->route('donations.index')->with('success', 'Donation deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to delete donation: ' . $e->getMessage());
         }
+    }
 
-        $donation->delete();
+    private function getStorageLocation($storeType)
+    {
+        return match ($storeType) {
+            'bank' => 'Bank',
+            'safe' => 'Safe',
+            'warehouse' => 'Warehouse',
+            'food_bank' => 'Food Bank',
+            'storage_unit' => 'Storage Unit',
+            'other' => 'Other',
+            default => 'Other',
+        };
+    }
 
-        return redirect()->route('donations.index')
-            ->with('success', 'Donation deleted successfully.');
+    private function getDonationType($storeType)
+    {
+        return match ($storeType) {
+            'bank', 'safe' => 'Money',
+            'warehouse', 'storage_unit' => 'Items',
+            'food_bank' => 'Food',
+            default => 'Other',
+        };
     }
 }

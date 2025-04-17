@@ -6,20 +6,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Currency extends Model
+class Objective extends Model
 {
-    /** @use HasFactory<\Database\Factories\CurrencyFactory> */
+    /** @use HasFactory<\Database\Factories\ObjectiveFactory> */
     use HasFactory;
 
     protected $fillable = [
-        'code',
         'name',
-        'symbol',
-        'exchange_rate',
+        'description'
     ];
 
     /**
-     * Get the donations associated with the currency.
+     * Get the donations associated with the objective.
      */
     public function donations(): HasMany
     {

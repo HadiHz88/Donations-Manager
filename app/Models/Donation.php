@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -16,7 +17,8 @@ class Donation extends Model
         'reference_id',
         'donor_name',
         'amount',
-        'objective',
+        'currency_id',
+        'objective_id',
         'storage_location',
         'date_received',
         'notes',
@@ -52,8 +54,24 @@ class Donation extends Model
         return $this->remaining_amount <= 0;
     }
 
-    public function currency(): HasOne
+    /**
+     * Get the objective associated with the donation.
+     */
+    public function objective(): BelongsTo
     {
-        return $this->hasOne(Currency::class);
+        return $this->belongsTo(Objective::class);
+    }
+
+    /**
+     * Get the currency associated with the donation.
+     */
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
+    public function outcome(): HasOne
+    {
+        return $this->hasOne(Outcome::class, 'source_donation_id');
     }
 }
