@@ -24,5 +24,5 @@
     </div>
 
     <!-- Donations table component -->
-    <x-tables.income-table :donations="$donations" />
+    <x-tables.donation-table :donations="$donations" />
 </x-app-layout>

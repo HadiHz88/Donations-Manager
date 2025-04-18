@@ -19,7 +19,7 @@ class DonationController extends Controller
         $objectives = Objective::orderBy('name')->get();
         $currencies = Currency::orderBy('code')->get();
 
-        return view('pages.income', [
+        return view('donations.index', [
             'donations' => $donations,
             'objectives' => $objectives,
             'currencies' => $currencies
@@ -31,7 +31,7 @@ class DonationController extends Controller
         $objectives = Objective::orderBy('name')->get();
         $currencies = Currency::orderBy('code')->get();
 
-        return view('pages.income-form', [
+        return view('donations.create-edit', [
             'objectives' => $objectives,
             'currencies' => $currencies,
             'donation' => null,
@@ -52,7 +52,7 @@ class DonationController extends Controller
         try {
             // Generate a unique reference ID
             $referenceId = 'DON-' . strtoupper(Str::random(8));
-            
+
             // Ensure the reference ID is unique
             while (Donation::where('reference_id', $referenceId)->exists()) {
                 $referenceId = 'DON-' . strtoupper(Str::random(8));
@@ -89,7 +89,7 @@ class DonationController extends Controller
             'storage_location' => $this->getStorageLocation($donation->store),
         ];
 
-        return view('pages.income-form', [
+        return view('donations.create-edit', [
             'donation' => $formattedDonation,
             'objectives' => $objectives,
             'currencies' => $currencies,

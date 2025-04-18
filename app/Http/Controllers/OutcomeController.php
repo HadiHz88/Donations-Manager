@@ -16,7 +16,7 @@ class OutcomeController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('pages.outcome', [
+        return view('outcomes.index', [
             'outcomes' => $outcomes
         ]);
     }
@@ -24,13 +24,12 @@ class OutcomeController extends Controller
     public function create()
     {
         $donations = Donation::with(['currency', 'objective'])
-            ->whereDoesntHave('outcome')
             ->latest()
             ->get();
 
         $currencies = Currency::orderBy('code')->get();
 
-        return view('pages.outcome-form', [
+        return view('outcomes.create-edit', [
             'outcome' => null,
             'donations' => $donations,
             'currencies' => $currencies
@@ -53,7 +52,7 @@ class OutcomeController extends Controller
         try {
             // Generate a unique reference ID
             $referenceId = 'OUT-' . strtoupper(Str::random(8));
-            
+
             // Ensure the reference ID is unique
             while (Outcome::where('reference_id', $referenceId)->exists()) {
                 $referenceId = 'OUT-' . strtoupper(Str::random(8));
@@ -89,7 +88,7 @@ class OutcomeController extends Controller
 
         $currencies = Currency::orderBy('code')->get();
 
-        return view('pages.outcome-form', [
+        return view('outcomes.create-edit', [
             'outcome' => $outcome,
             'donations' => $donations,
             'currencies' => $currencies
