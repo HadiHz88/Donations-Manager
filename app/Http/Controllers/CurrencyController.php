@@ -7,37 +7,49 @@ use Illuminate\Http\Request;
 
 class CurrencyController extends Controller
 {
-    /**
-     * Store a newly created currency in storage.
-     */
+    public function index()
+    {
+        $currencies = Currency::all();
+        return response()->json($currencies);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => 'required|string|size:3|unique:currencies,code',
+            'code' => 'required|string|max:3|unique:currencies,code',
             'name' => 'required|string|max:255',
-            'symbol' => 'required|string|max:10',
-            'exchange_rate' => 'required|numeric|min:0',
+            'symbol' => 'required|string|max:5',
+            'exchange_rate' => 'required|numeric|min:0'
         ]);
 
         $currency = Currency::create($validated);
 
-        return redirect()->route('currencies.index')->with('success', 'Currency Created successfully.');
+        return redirect()->back()->with('success', 'Currency added successfully');
     }
 
-    /**
-     * Update the specified currency.
-     */
     public function update(Request $request, Currency $currency)
     {
         $validated = $request->validate([
-            'code' => 'required|string|size:3|unique:currencies,code',
+            'code' => 'required|string|max:3|unique:currencies,code,' . $currency->id,
             'name' => 'required|string|max:255',
-            'symbol' => 'required|string|max:10',
-            'exchange_rate' => 'required|numeric|min:0',
+            'symbol' => 'required|string|max:5',
+            'exchange_rate' => 'required|numeric|min:0'
         ]);
 
         $currency->update($validated);
 
-        return redirect()->route('currencies.index')->with('success', 'Currency updated successfully.');
+        return redirect()->back()->with('success', 'Currency updated successfully');
+    }
+
+    public function destroy(Currency $currency)
+    {
+        // Check if currency is in use
+        if ($currency->objectives()->count() > 0 || $currency->donations()->count() > 0) {
+            return redirect()->back()->with('error', 'Cannot delete currency that is in use');
+        }
+
+        $currency->delete();
+
+        return redirect()->back()->with('success', 'Currency deleted successfully');
     }
 }

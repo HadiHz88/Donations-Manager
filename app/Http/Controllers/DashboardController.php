@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Currency;
 use App\Models\Donation;
 use App\Models\Outcome;
 use App\Models\Objective;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class StatisticsController extends Controller
+class DashboardController extends Controller
 {
     public function index()
     {
@@ -65,7 +66,7 @@ class StatisticsController extends Controller
                 return (object)[
                     'date' => $donation->date_received,
                     'type' => 'income',
-                    'description' => "Received {$donation->currency->code} " . number_format($donation->amount, 2) . 
+                    'description' => "Received {$donation->currency->code} " . number_format($donation->amount, 2) .
                         " from {$donation->donor_name} for {$donation->objective->name}"
                 ];
             });
@@ -78,7 +79,7 @@ class StatisticsController extends Controller
                 return (object)[
                     'date' => $outcome->date_sent,
                     'type' => 'outcome',
-                    'description' => "Sent {$outcome->donation->currency->code} " . number_format($outcome->amount, 2) . 
+                    'description' => "Sent {$outcome->donation->currency->code} " . number_format($outcome->amount, 2) .
                         " to {$outcome->target_organization}"
                 ];
             });
@@ -87,13 +88,19 @@ class StatisticsController extends Controller
             ->sortByDesc('date')
             ->take(5);
 
-        return view('pages.statistics', compact(
+        // Get currencies and objectives for management
+        $currencies = Currency::all();
+        $objectives = Objective::all();
+
+        return view('dashboard.index', compact(
             'totalIncome',
             'totalOutcome',
             'remainingFunds',
             'distributionData',
             'monthlyTrends',
-            'recentActivities'
+            'recentActivities',
+            'currencies',
+            'objectives'
         ));
     }
 }
