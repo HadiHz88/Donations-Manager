@@ -106,30 +106,14 @@
         </div>
     </div>
 
-    <!-- Charts and additional stats -->
+    <!-- Charts -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <!-- Funds Distribution Chart -->
         <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Funds Distribution</h3>
                 <div class="mt-5">
-                    <!-- Simple bar chart using pure HTML/CSS -->
-                    <div class="space-y-4">
-                        @foreach ($distributionData as $item)
-                            <div>
-                                <div class="flex items-center">
-                                    <div class="w-32 text-sm font-medium text-gray-600">{{ $item['name'] }}</div>
-                                    <div class="flex-1 ml-4">
-                                        <div class="relative h-4 bg-gray-200 rounded-full">
-                                            <div class="absolute h-4 bg-indigo-600 rounded-full"
-                                                style="width: {{ $item['percentage'] }}%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3 text-sm font-medium text-gray-600">{{ $item['percentage'] }}%</div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+                    <canvas id="distributionChart" class="w-full" height="250"></canvas>
                 </div>
             </div>
         </div>
@@ -139,85 +123,114 @@
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Monthly Trends</h3>
                 <div class="mt-5">
-                    <!-- Simple line chart using pure HTML/CSS -->
-                    <div class="relative h-64">
-                        <!-- Y-axis labels -->
-                        <div class="absolute inset-y-0 left-0 flex flex-col justify-between text-xs text-gray-500 py-2">
-                            <div>$4k</div>
-                            <div>$3k</div>
-                            <div>$2k</div>
-                            <div>$1k</div>
-                            <div>$0</div>
-                        </div>
-
-                        <!-- Chart area -->
-                        <div class="absolute inset-0 ml-8 mr-2">
-                            <!-- Horizontal grid lines -->
-                            <div class="absolute inset-0 flex flex-col justify-between">
-                                <div class="border-t border-gray-200 h-0"></div>
-                                <div class="border-t border-gray-200 h-0"></div>
-                                <div class="border-t border-gray-200 h-0"></div>
-                                <div class="border-t border-gray-200 h-0"></div>
-                                <div class="border-t border-gray-200 h-0"></div>
-                            </div>
-
-                            <!-- Income line -->
-                            <div class="absolute bottom-0 left-0 right-0 flex items-end">
-                                @foreach ($monthlyTrends['income'] as $index => $value)
-                                    @php
-                                        $height = ($value / 4000) * 100; // Scale to percentage of max height (4k)
-                                        $heightPx = ($height * 64) / 100; // Convert to pixels (64px is chart height)
-                                    @endphp
-                                    <div
-                                        class="w-1/{{ count($monthlyTrends['income']) }} h-{{ round($heightPx) }} bg-indigo-100 border-t-2 border-indigo-500 relative">
-                                        <div
-                                            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-indigo-500 rounded-full">
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-
-                            <!-- Outcome line -->
-                            <div class="absolute bottom-0 left-0 right-0 flex items-end">
-                                @foreach ($monthlyTrends['outcome'] as $index => $value)
-                                    @php
-                                        $height = ($value / 4000) * 100; // Scale to percentage of max height (4k)
-                                        $heightPx = ($height * 64) / 100; // Convert to pixels (64px is chart height)
-                                    @endphp
-                                    <div
-                                        class="w-1/{{ count($monthlyTrends['outcome']) }} h-{{ round($heightPx) }} border-t-2 border-red-500 relative">
-                                        <div
-                                            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-500 rounded-full">
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- X-axis labels -->
-                        <div
-                            class="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-gray-500 pt-2 ml-8">
-                            @foreach ($monthlyTrends['months'] as $month)
-                                <div>{{ $month }}</div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Legend -->
-                    <div class="mt-4 flex justify-center space-x-8">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
-                            <span class="text-sm text-gray-600">Income</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                            <span class="text-sm text-gray-600">Outcome</span>
-                        </div>
-                    </div>
+                    <canvas id="trendChart" class="w-full" height="250"></canvas>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Distribution Chart
+            const distributionData = @json($distributionData);
+
+            new Chart(document.getElementById('distributionChart'), {
+                type: 'bar',
+                data: {
+                    labels: distributionData.map(item => item.name),
+                    datasets: [{
+                        label: 'Distribution (%)',
+                        data: distributionData.map(item => item.percentage),
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Monthly Trends Chart
+            const trendsData = @json($monthlyTrends);
+
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: trendsData.months,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: trendsData.income,
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Outcome',
+                            data: trendsData.outcome,
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000) {
+                                        return '$' + value / 1000 + 'k';
+                                    }
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + context.raw.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 
     <!-- Recent Activity -->
     <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">

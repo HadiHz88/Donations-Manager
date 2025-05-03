@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Donations Manager' }}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen">
 <!-- Navigation -->
@@ -23,8 +23,8 @@
                     <a href="{{ route('outcomes.index') }}" class="{{ request()->routeIs('outcomes.*') && !request()->routeIs('outcomes.create') && !request()->routeIs('outcomes.edit') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                         Outcome
                     </a>
-                    <a href="{{ route('statistics') }}" class="{{ request()->routeIs('statistics') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                        Statistics
+                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('statistics') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        Dashboard
                     </a>
                 </div>
             </div>

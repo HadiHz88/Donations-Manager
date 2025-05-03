@@ -10,19 +10,52 @@ use Illuminate\Support\Str;
 
 class DonationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $donations = Donation::with(['objective', 'currency'])
-            ->latest()
-            ->paginate(10);
+        $query = Donation::with(['objective', 'currency']);
+
+        // Handle search by donor name or reference ID
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('donor_name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('reference_id', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by objective
+        if ($request->has('objective') && !empty($request->objective)) {
+            $query->where('objective_id', $request->objective);
+        }
+
+        // Filter by storage location
+        if ($request->has('storage_location') && !empty($request->storage_location)) {
+            $query->where('storage_location', $request->storage_location);
+        }
+
+        // Filter by amount range
+        if ($request->has('min_amount') && !empty($request->min_amount)) {
+            $query->where('amount', '>=', $request->min_amount);
+        }
+
+        if ($request->has('max_amount') && !empty($request->max_amount)) {
+            $query->where('amount', '<=', $request->max_amount);
+        }
+
+        $donations = $query->latest()->paginate(10);
 
         $objectives = Objective::orderBy('name')->get();
         $currencies = Currency::orderBy('code')->get();
 
+        // Get unique storage locations for filtering
+        $storageLocations = Donation::distinct()->pluck('storage_location')->filter()->sort()->values();
+
         return view('donations.index', [
             'donations' => $donations,
             'objectives' => $objectives,
-            'currencies' => $currencies
+            'currencies' => $currencies,
+            'storageLocations' => $storageLocations,
+            'filters' => $request->only(['search', 'objective', 'storage_location', 'min_amount', 'max_amount'])
         ]);
     }
 
