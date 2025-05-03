@@ -22,7 +22,7 @@ class CurrencyController extends Controller
             'exchange_rate' => 'required|numeric|min:0'
         ]);
 
-        $currency = Currency::create($validated);
+        Currency::create($validated);
 
         return redirect()->back()->with('success', 'Currency added successfully');
     }

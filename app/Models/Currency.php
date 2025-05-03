@@ -25,4 +25,9 @@ class Currency extends Model
     {
         return $this->hasMany(Donation::class);
     }
+
+    public function objectives(): HasMany
+    {
+        return $this->hasMany(Objective::class);
+    }
 }

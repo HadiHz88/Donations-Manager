@@ -20,7 +20,7 @@ class ObjectiveController extends Controller
             'description' => 'required|string',
         ]);
 
-        $objective = Objective::create($validated);
+        Objective::create($validated);
 
         return redirect()->back()->with('success', 'Objective added successfully');
     }
@@ -39,7 +39,7 @@ class ObjectiveController extends Controller
 
     public function destroy(Objective $objective)
     {
-        // Check if objective is in use
+        // Check if the objective is in use
         if ($objective->donations()->count() > 0) {
             return redirect()->back()->with('error', 'Cannot delete objective that has donations');
         }
