@@ -71,15 +71,14 @@ class DashboardController extends Controller
                 ];
             });
 
-        $recentOutcomes = Outcome::with(['donation.currency'])
-            ->latest('date_sent')
+        $recentOutcomes = Outcome::latest('date_sent')
             ->take(5)
             ->get()
             ->map(function ($outcome) {
                 return (object)[
                     'date' => $outcome->date_sent,
                     'type' => 'outcome',
-                    'description' => "Sent {$outcome->donation->currency->code} " . number_format($outcome->amount, 2) .
+                    'description' => "Sent {$outcome->currency->code} " . number_format($outcome->amount, 2) .
                         " to {$outcome->target_organization}"
                 ];
             });

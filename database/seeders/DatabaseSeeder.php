@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
         $currencies = [
             ['code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$', 'exchange_rate' => 1.0000],
             ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'exchange_rate' => 0.8800],
-            ['code' => 'VND', 'name' => 'Lebanese Pounds', 'symbol' => 'LBP', 'exchange_rate' => 89000.0000],
+            ['code' => 'LBP', 'name' => 'Lebanese Pounds', 'symbol' => 'LBP', 'exchange_rate' => 89000.0000],
         ];
 
         foreach ($currencies as $currency) {

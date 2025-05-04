@@ -9,10 +9,6 @@
                         <tr>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Reference ID
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Donor
                             </th>
                             <th scope="col"
@@ -39,9 +35,6 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($donations as $donation)
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ $donation->reference_id }}
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $donation->donor_name }}
                                 </td>

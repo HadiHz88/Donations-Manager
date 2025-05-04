@@ -11,6 +11,8 @@ class Objective extends Model
     /** @use HasFactory<\Database\Factories\ObjectiveFactory> */
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'name',
         'description'

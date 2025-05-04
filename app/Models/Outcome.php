@@ -11,23 +11,19 @@ class Outcome extends Model
     /** @use HasFactory<\Database\Factories\OutcomeFactory> */
     use HasFactory;
 
+    public $timestamps = false;
     protected $fillable = [
-        'reference_id',
         'amount',
         'currency_id',
         'target_organization',
-        'source_donation_id',
-        'source_donation_ref',
         'date_sent',
         'payment_method',
         'notes',
-        'receipt_received',
     ];
 
     protected $casts = [
         'date_sent' => 'date',
         'amount' => 'decimal:2',
-        'receipt_received' => 'boolean',
     ];
 
     /**
@@ -36,13 +32,5 @@ class Outcome extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
-    }
-
-    /**
-     * Get the donation that this outcome is drawn from.
-     */
-    public function donation(): BelongsTo
-    {
-        return $this->belongsTo(Donation::class, 'source_donation_id');
     }
 }

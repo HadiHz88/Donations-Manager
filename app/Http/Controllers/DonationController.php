@@ -83,16 +83,7 @@ class DonationController extends Controller
         ]);
 
         try {
-            // Generate a unique reference ID
-            $referenceId = 'DON-' . strtoupper(Str::random(8));
-
-            // Ensure the reference ID is unique
-            while (Donation::where('reference_id', $referenceId)->exists()) {
-                $referenceId = 'DON-' . strtoupper(Str::random(8));
-            }
-
             Donation::create([
-                'reference_id' => $referenceId,
                 'donor_name' => $validated['donor_name'],
                 'objective_id' => $validated['objective'],
                 'currency_id' => $validated['currency'],

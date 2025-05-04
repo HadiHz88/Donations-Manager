@@ -11,6 +11,8 @@ class Currency extends Model
     /** @use HasFactory<\Database\Factories\CurrencyFactory> */
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'code',
         'name',

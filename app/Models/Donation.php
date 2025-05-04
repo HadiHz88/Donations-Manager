@@ -13,8 +13,9 @@ class Donation extends Model
     /** @use HasFactory<\Database\Factories\DonationFactory> */
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
-        'reference_id',
         'donor_name',
         'amount',
         'currency_id',
@@ -28,14 +29,6 @@ class Donation extends Model
         'date_received' => 'date',
         'amount' => 'decimal:2',
     ];
-
-    /**
-     * Get the outcomes associated with this donation.
-     */
-    public function outcomes(): HasMany
-    {
-        return $this->hasMany(Outcome::class, 'source_donation_id');
-    }
 
     /**
      * Get the remaining amount available from this donation.
@@ -68,10 +61,5 @@ class Donation extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
-    }
-
-    public function outcome(): HasOne
-    {
-        return $this->hasOne(Outcome::class, 'source_donation_id');
     }
 }

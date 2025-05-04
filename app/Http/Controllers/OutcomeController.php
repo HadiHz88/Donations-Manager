@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Outcome;
-use App\Models\Donation;
 use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -12,7 +11,7 @@ class OutcomeController extends Controller
 {
     public function index()
     {
-        $outcomes = Outcome::with(['donation', 'currency'])
+        $outcomes = Outcome::with(['currency'])
             ->latest()
             ->paginate(10);
 
@@ -23,15 +22,10 @@ class OutcomeController extends Controller
 
     public function create()
     {
-        $donations = Donation::with(['currency', 'objective'])
-            ->latest()
-            ->get();
-
         $currencies = Currency::orderBy('code')->get();
 
         return view('outcomes.create-edit', [
             'outcome' => null,
-            'donations' => $donations,
             'currencies' => $currencies
         ]);
     }
@@ -42,33 +36,19 @@ class OutcomeController extends Controller
             'amount' => 'required|numeric|min:0',
             'currency' => 'required|exists:currencies,id',
             'target_organization' => 'required|string|max:255',
-            'source_donation_id' => 'required|exists:donations,id',
             'date_sent' => 'required|date',
             'payment_method' => 'nullable|string|in:Bank Transfer,Cash,Check,Other',
             'notes' => 'nullable|string',
-            'receipt_received' => 'nullable|boolean',
         ]);
 
         try {
-            // Generate a unique reference ID
-            $referenceId = 'OUT-' . strtoupper(Str::random(8));
-
-            // Ensure the reference ID is unique
-            while (Outcome::where('reference_id', $referenceId)->exists()) {
-                $referenceId = 'OUT-' . strtoupper(Str::random(8));
-            }
-
             Outcome::create([
-                'reference_id' => $referenceId,
                 'amount' => $validated['amount'],
                 'currency_id' => $validated['currency'],
                 'target_organization' => $validated['target_organization'],
-                'source_donation_id' => $validated['source_donation_id'],
-                'source_donation_ref' => Donation::find($validated['source_donation_id'])->reference_id,
                 'date_sent' => $validated['date_sent'],
                 'payment_method' => $validated['payment_method'],
                 'notes' => $validated['notes'],
-                'receipt_received' => $validated['receipt_received'] ?? false,
             ]);
 
             return redirect()->route('outcomes.index')->with('success', 'Outcome created successfully.');
@@ -79,18 +59,11 @@ class OutcomeController extends Controller
 
     public function edit($id)
     {
-        $outcome = Outcome::with(['donation', 'currency'])->findOrFail($id);
-        $donations = Donation::with(['currency', 'objective'])
-            ->whereDoesntHave('outcome')
-            ->orWhere('id', $outcome->source_donation_id)
-            ->latest()
-            ->get();
-
+        $outcome = Outcome::with(['currency'])->findOrFail($id);
         $currencies = Currency::orderBy('code')->get();
 
         return view('outcomes.create-edit', [
             'outcome' => $outcome,
-            'donations' => $donations,
             'currencies' => $currencies
         ]);
     }
@@ -101,11 +74,9 @@ class OutcomeController extends Controller
             'amount' => 'required|numeric|min:0',
             'currency' => 'required|exists:currencies,id',
             'target_organization' => 'required|string|max:255',
-            'source_donation_id' => 'required|exists:donations,id',
             'date_sent' => 'required|date',
             'payment_method' => 'nullable|string|in:Bank Transfer,Cash,Check,Other',
             'notes' => 'nullable|string',
-            'receipt_received' => 'nullable|boolean',
         ]);
 
         try {
@@ -114,7 +85,6 @@ class OutcomeController extends Controller
                 'amount' => $validated['amount'],
                 'currency_id' => $validated['currency'],
                 'target_organization' => $validated['target_organization'],
-                'source_donation_id' => $validated['source_donation_id'],
                 'date_sent' => $validated['date_sent'],
                 'payment_method' => $validated['payment_method'],
                 'notes' => $validated['notes'],

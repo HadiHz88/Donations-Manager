@@ -14,7 +14,6 @@ return new class extends Migration {
     {
         Schema::create('donations', function (Blueprint $table) {
             $table->id();
-            $table->string('reference_id')->unique();
             $table->string('donor_name');
             $table->decimal('amount', 10, 2);
             $table->foreignIdFor(Currency::class);
@@ -22,7 +21,6 @@ return new class extends Migration {
             $table->string('storage_location');
             $table->date('date_received');
             $table->text('notes')->nullable();
-            $table->timestamps();
         });
     }
 
